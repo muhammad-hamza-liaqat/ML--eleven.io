@@ -20,7 +20,7 @@ This project integrates **ChatGPT** for generating text responses and **Eleven L
 1. Clone this repository or download the script file.
 
    ```bash
-   git clone https://github.com/your-repo/eleven-labs-chatgpt.git
+   git clone https://github.com/muhammad-hamza-liaqat/ML--eleven.io
    cd eleven-labs-chatgpt
    ```
 
