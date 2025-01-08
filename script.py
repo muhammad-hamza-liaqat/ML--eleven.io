@@ -1,63 +1,57 @@
-import requests
 import os
 from dotenv import load_dotenv
 load_dotenv()
+from elevenlabs import ElevenLabs
 
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-ELEVEN_LABS_API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
-print(OPENAI_API_KEY,ELEVEN_LABS_API_KEY, "from enviormental variables" )
+ELEVENLABS_API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
+client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 
-def get_chatgpt_response(prompt):
-    url = "https://api.openai.com/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "gpt-3.5-turbo", 
-        "messages": [{"role": "user", "content": prompt}]
-    }
+SAVING_DIR = "soundEffects"
 
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"]
-    else:
-        print(f"ChatGPT Error: {response.status_code}, {response.text}")
+def create_audio_dir():
+    if not os.path.exists(SAVING_DIR):
+        os.makedirs(SAVING_DIR)
+
+def generate_unique_filename(prompt):
+    base_filename = prompt.replace(" ", "_").lower()
+    counter = 1
+    while True:
+        filename = f"{base_filename}_{counter}.mp3"
+        filepath = os.path.join(SAVING_DIR, filename)
+        if not os.path.exists(filepath):
+            return filepath
+        counter += 1
+
+
+def generate_sound_effect(prompt):
+
+    try:
+        audio_generator = client.text_to_sound_effects.convert(text=prompt)
+
+        audio_content = b"".join(audio_generator)
+
+        output_audio = generate_unique_filename(prompt)
+
+        with open(output_audio, "wb") as f:
+            f.write(audio_content)
+        print(f"Generated SFX saved as {output_audio}")
+        return output_audio
+
+    except Exception as e:
+        print(f"Error generating SFX with ElevenLabs: {e}")
         return None
 
-# Eleven Labs Function
-def convert_text_to_speech(text, voice="cjVigY5qzO86Huf0OWal"):
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}"
-    headers = {
-        "xi-api-key": ELEVEN_LABS_API_KEY,
-        "Content-Type": "application/json"
-    }
-    data = {
-        "text": text,
-        "voice_settings": {
-            "stability": 0.5,
-            "similarity_boost": 0.5
-        }
-    }
-
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
-        audio_file = "output_audio.mp3"
-        with open(audio_file, "wb") as f:
-            f.write(response.content)
-        print(f"Audio saved as {audio_file}")
-    else:
-        print(f"Eleven Labs Error: {response.status_code}, {response.text}")
 
 if __name__ == "__main__":
-    prompt = input("Enter your prompt: ")
+    create_audio_dir()
 
-    print("Fetching response from ChatGPT...")
-    chatgpt_response = get_chatgpt_response(prompt)
+    user_prompt = input("Enter the sound effect prompt: ")
 
-    if chatgpt_response:
-        print(f"ChatGPT Response: {chatgpt_response}")
+    print("Generating SFX with ElevenLabs...")
+    sfx_audio = generate_sound_effect(user_prompt)
 
-        print("Converting text to speech using Eleven Labs...")
-        convert_text_to_speech(chatgpt_response)
+    if sfx_audio:
+        print(f"SFX successfully generated: {sfx_audio}")
+    else:
+        print("Failed to generate SFX.")
